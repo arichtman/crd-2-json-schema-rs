@@ -4,10 +4,11 @@
     dead_code,
     unused_imports,
     unused_variables,
-    unreachable_code
+    unreachable_code,
+    non_snake_case
 )]
 
-use openapiv3::OpenAPI;
+// use openapiv3::OpenAPI as OtherOpenAPI;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{self};
 use std::collections::HashMap;
@@ -18,7 +19,7 @@ struct Names {
     plural: String,
     singular: String,
     kind: String, //TODO: TBD, could be enum
-    short_names: Vec<String>,
+    shortNames: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -26,8 +27,28 @@ struct Version {
     name: String,
     served: bool,
     storage: bool,
-    schema: OpenAPI,
+    // schema: OpenAPI,
+    // schema: HashMap<OpenAPI>,
+    schema: HashMap<String, OpenAPI>,
 }
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct OpenAPI {
+    // r#type: String,
+    // properties: OpenAPISpec,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+struct OpenAPISpec {
+    // r#type: String,
+    //TODO: Possibly adjust the nested hashmap if it's always "type": String
+    // properties: HashMap<String, HashMap<String, String>>,
+}
+
+// #[derive(Serialize, Deserialize, PartialEq, Debug)]
+// struct OpenAPIProperties {
+//     HashMap<String, HashMap<String, String>>
+// }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Spec {
@@ -38,18 +59,11 @@ struct Spec {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct KeyValuePair {
-    name: String,
-    value: String,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Crd {
     apiVersion: String,
     kind: String,
     metadata: HashMap<String, String>,
-    // metadata: Vec<KeyValuePair>,
-    // spec: Spec,
+    spec: Spec,
 }
 
 fn main() {
@@ -60,6 +74,6 @@ fn main() {
         // if let Ok(file_contents) = fs::read_to_string(String::from("resource-definition.yaml")) {
         // let data_structure = serde_yaml::from_str(&file_contents);
         println!("{:?}", data_structure);
-        todo!();
+        todo!("main function after data load");
     }
 }
