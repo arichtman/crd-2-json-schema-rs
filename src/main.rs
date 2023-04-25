@@ -27,28 +27,22 @@ struct Version {
     name: String,
     served: bool,
     storage: bool,
-    // schema: OpenAPI,
-    // schema: HashMap<OpenAPI>,
     schema: HashMap<String, OpenAPI>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct OpenAPI {
-    // r#type: String,
-    // properties: OpenAPISpec,
+    r#type: String,
+    //TODO: Same potential optimization if it's always spec
+    properties: HashMap<String, OpenAPISpec>,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct OpenAPISpec {
-    // r#type: String,
+    r#type: String,
     //TODO: Possibly adjust the nested hashmap if it's always "type": String
-    // properties: HashMap<String, HashMap<String, String>>,
+    properties: HashMap<String, HashMap<String, String>>,
 }
-
-// #[derive(Serialize, Deserialize, PartialEq, Debug)]
-// struct OpenAPIProperties {
-//     HashMap<String, HashMap<String, String>>
-// }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct Spec {
@@ -69,10 +63,7 @@ struct Crd {
 fn main() {
     //TODO: should we use if let here?
     if let Ok(file) = fs::File::open(String::from("resource-definition.yaml")) {
-        // let data_structure: OpenAPI = serde_yaml::from_reader(file).unwrap();
         let data_structure: Crd = serde_yaml::from_reader(file).unwrap();
-        // if let Ok(file_contents) = fs::read_to_string(String::from("resource-definition.yaml")) {
-        // let data_structure = serde_yaml::from_str(&file_contents);
         println!("{:?}", data_structure);
         todo!("main function after data load");
     }
