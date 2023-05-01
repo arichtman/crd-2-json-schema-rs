@@ -8,9 +8,12 @@
     non_snake_case
 )]
 
-// use openapiv3::OpenAPI as OtherOpenAPI;
+//TODO: decide if we're using this or not
+use openapiv3::OpenAPI as OutputOpenAPI;
+use schemars::{schema_for, JsonSchema};
 use serde::{Deserialize, Serialize};
-use serde_yaml::{self};
+use serde_json;
+use serde_yaml;
 use std::collections::HashMap;
 use std::fs;
 
@@ -37,7 +40,8 @@ struct OpenAPI {
     properties: HashMap<String, OpenAPISpec>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+//TODO: Could this be directly our OpenAPI library struct?
+#[derive(Serialize, Deserialize, PartialEq, Debug, JsonSchema)]
 struct OpenAPISpec {
     r#type: String,
     //TODO: Possibly adjust the nested hashmap if it's always "type": String
@@ -48,8 +52,14 @@ struct OpenAPISpec {
 struct Spec {
     group: String,
     versions: Vec<Version>,
-    scope: String,
+    scope: Scope,
     names: Names,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+enum Scope {
+    Namespaced,
+    Cluster,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -60,11 +70,31 @@ struct Crd {
     spec: Spec,
 }
 
+//TODO: wip, build out or delete
+impl From<Crd> for OutputOpenAPI {
+    fn from(crd: Crd) -> OutputOpenAPI {
+        // serde_json::from_value(crd.spec.versions[0].schema);
+        todo!();
+    }
+}
+
 fn main() {
     //TODO: should we use if let here?
     if let Ok(file) = fs::File::open(String::from("resource-definition.yaml")) {
         let data_structure: Crd = serde_yaml::from_reader(file).unwrap();
         println!("{:?}", data_structure);
+        if let Some(crd_name) = data_structure.metadata.get("name") {
+            println!("{}", crd_name);
+        };
+        //TODO: I _think_ the if let is better, but I'm not sure what the idiomatic way to test this is...
+        if !data_structure.metadata.contains_key("name") {
+            panic!()
+        };
+        //TODO: This works but is based on the struct, not the actual CRD
+        //  But if we're generating based on structs, and the structs have to be known at compile time...
+        //  I'm missing something here...
+        let schema = schema_for!(OpenAPISpec);
+        println!("{}", serde_json::to_string_pretty(&schema).unwrap());
         todo!("main function after data load");
     }
 }
