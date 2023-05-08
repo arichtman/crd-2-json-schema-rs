@@ -7,68 +7,20 @@
     unreachable_code,
     non_snake_case
 )]
-
+//TODO: When to use which of these?
+//TODO: Should we be making these public?
+//  I figured they were internal use only by main.rs
+mod crd;
+// use crd::*;
+// use crate::crd;
+use crate::crd::*;
 use json_schema::{
     JSONSchema, JSONSchemaObject, JSONSchemaObjectBuilder, Properties, SimpleTypes,
     Type as SchemaType,
 };
-use serde::{Deserialize, Serialize};
 use serde_yaml;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs;
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct Names {
-    plural: String,
-    singular: String,
-    kind: String, //TODO: TBD, could be enum
-    shortNames: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct Version {
-    name: String,
-    served: bool,
-    storage: bool,
-    schema: HashMap<String, OpenAPI>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct OpenAPI {
-    r#type: String,
-    //TODO: Same potential optimization if it's always spec
-    properties: HashMap<String, OpenAPISpec>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct OpenAPISpec {
-    r#type: String,
-    //TODO: Possibly adjust the nested hashmap if it's always "type": String
-    properties: HashMap<String, HashMap<String, String>>,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct Spec {
-    group: String,
-    versions: Vec<Version>,
-    scope: Scope,
-    names: Names,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-enum Scope {
-    Namespaced,
-    Cluster,
-}
-
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-struct Crd {
-    apiVersion: String,
-    kind: String,
-    metadata: HashMap<String, String>,
-    spec: Spec,
-}
 
 fn main() {
     //TODO: I wonder how much difference there is between using ?, unwrap, and expect...
@@ -84,7 +36,7 @@ fn main() {
         .filter(|x| x.storage)
         .collect();
     //TODO: This still feels lousy for testing purposes.
-    assert_eq!(crd_specs.len, 1);
+    assert_eq!(crd_specs.len(), 1);
     let crd_spec = &crd_specs[0];
     //TODO: Same question for testing...
     let crd_name = crd.metadata.get("name").expect("CRD must have a name");
