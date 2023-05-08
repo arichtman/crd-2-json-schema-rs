@@ -71,67 +71,56 @@ struct Crd {
 }
 
 fn main() {
-    //TODO: should we use if let here?
-    if let Ok(file) = fs::File::open(String::from("resource-definition.yaml")) {
-        let crd: Crd = serde_yaml::from_reader(file).unwrap();
-        println!("{:?}", crd);
-        let crd_specs: Vec<Version> = crd
-            .spec
-            .versions
-            .into_iter()
-            .filter(|x| x.storage)
-            .collect();
-        //TODO: would it be better here to only check success condition with an if
-        //  and throw a generic panic for all non-1 cases?
-        match crd_specs.len().cmp(&1) {
-            //TODO: These side effects kinda smell....
-            //TODO: Preeeetty sure panicking is lousy for testing, even then the text coupling is poor.
-            Ordering::Less => panic!("No specs found or found marked as storage"),
-            Ordering::Equal => (),
-            Ordering::Greater => {
-                panic!("One and only one version must be marked as the storage version")
-            }
-        };
-        let crd_spec = &crd_specs[0];
-        //TODO: I'm not liking the if-let and having to nest mountains of code...
-        if let Some(crd_name) = crd.metadata.get("name") {
-            println!("{}", crd_name);
-            let crd_group = crd.spec.group;
-            let crd_spec_name = &crd_spec.name;
-            let crd_spec_kind = &crd.spec.names.kind;
-            //TODO: Rethink the use of this library. It's a LOT of fiddling around when we can probably
-            //   just dynamically populate a data structure and serialize that out to JSON...
-            let mut properties: HashMap<String, JSONSchema> = HashMap::new();
-            //TODO: Handle returns of builder error
-            let api_version_schema_object = JSONSchemaObjectBuilder::default()
-                ._type(SchemaType::SimpleTypes(SimpleTypes::String))
-                //TODO: Sort out the ownership nonsense
-                ._enum(vec![serde_json::value::Value::String(crd_spec.name.clone())])
-                .description(String::from(" a string that identifies the version of the schema the object should have. For CRDs this is the crdGroup/version"))
-                // crd.spec.versions.keys())))
-                .build();
-            properties.insert(
-                String::from("apiVersion"),
-                //TODO: bruh ain't no way this is how it's meant to be
-                JSONSchema::JSONSchemaObject(api_version_schema_object.as_ref().unwrap().clone()),
-            );
-            // let api_property: HashMap<String, JSONSchema> = { String::from("apiVersion"):  };
-            let schema = JSONSchemaObjectBuilder::default()
-                .schema(String::from("http://json-schema.org/draft-07/schema#"))
-                //TODO: fix this borrowing nonsense
-                .title(crd_name.to_owned())
-                .description(format!(
-                    "Generated JSON schema for {}'s {} CRD",
-                    crd_group, crd_spec_kind
-                ))
-                ._type(SchemaType::SimpleTypes(SimpleTypes::Object))
-                .properties(properties)
-                .build()
-                .unwrap();
-            println!("{:?}", schema);
-            todo!("convert data structure to schema");
-        } else {
-            panic!("CRD must have a name");
-        };
-    }
+    //TODO: I wonder how much difference there is between using ?, unwrap, and expect...
+    let file =
+        fs::File::open(String::from("resource-definition.yaml")).expect("Error opening file");
+    let crd: Crd = serde_yaml::from_reader(file).unwrap();
+    println!("{:?}", crd);
+    let crd_specs: Vec<Version> = crd
+        .spec
+        .versions
+        .into_iter()
+        //TODO: I wonder if there's a better way to get .storage, maybe like flatten + filter?
+        .filter(|x| x.storage)
+        .collect();
+    //TODO: This still feels lousy for testing purposes.
+    assert_eq!(crd_specs.len, 1);
+    let crd_spec = &crd_specs[0];
+    //TODO: Same question for testing...
+    let crd_name = crd.metadata.get("name").expect("CRD must have a name");
+    println!("{}", crd_name);
+    let crd_group = crd.spec.group;
+    let crd_spec_name = &crd_spec.name;
+    let crd_spec_kind = &crd.spec.names.kind;
+    //TODO: Rethink the use of this library. It's a LOT of fiddling around when we can probably
+    //   just dynamically populate a data structure and serialize that out to JSON...
+    let mut properties: HashMap<String, JSONSchema> = HashMap::new();
+    //TODO: Handle returns of builder error
+    let api_version_schema_object = JSONSchemaObjectBuilder::default()
+        ._type(SchemaType::SimpleTypes(SimpleTypes::String))
+        //TODO: Sort out the ownership nonsense
+        ._enum(vec![serde_json::value::Value::String(crd_spec.name.clone())])
+        .description(String::from(" a string that identifies the version of the schema the object should have. For CRDs this is the crdGroup/version"))
+        // crd.spec.versions.keys())))
+        .build();
+    properties.insert(
+        String::from("apiVersion"),
+        //TODO: bruh ain't no way this is how it's meant to be
+        JSONSchema::JSONSchemaObject(api_version_schema_object.as_ref().unwrap().clone()),
+    );
+    // let api_property: HashMap<String, JSONSchema> = { String::from("apiVersion"):  };
+    let schema = JSONSchemaObjectBuilder::default()
+        .schema(String::from("http://json-schema.org/draft-07/schema#"))
+        //TODO: fix this borrowing nonsense
+        .title(crd_name.to_owned())
+        .description(format!(
+            "Generated JSON schema for {}'s {} CRD",
+            crd_group, crd_spec_kind
+        ))
+        ._type(SchemaType::SimpleTypes(SimpleTypes::Object))
+        .properties(properties)
+        .build()
+        .unwrap();
+    println!("{:?}", schema);
+    todo!("convert data structure to schema");
 }
