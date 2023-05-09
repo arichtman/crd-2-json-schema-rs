@@ -1,6 +1,6 @@
-use std::fmt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Names {
@@ -105,8 +105,10 @@ pub struct CRDJsonSchema {
 impl CRDJsonSchema {
     fn get_description(&self) -> String {
         //TODO: We're not actually storing the group granularly?
-        format!("Generated JSON schema for {}'s {} CRD",
-        self.schema_version, self.schema_version)
+        format!(
+            "Generated JSON schema for {}'s {} CRD",
+            self.schema_version, self.schema_version
+        )
     }
 }
 
@@ -131,9 +133,43 @@ impl From<Crd> for CRDJsonSchema {
 impl fmt::Display for CRDJsonSchema {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         //TODO: Printing logic
-        write!(f, "{{$schema: 'http://json-schema.org/draft-07/schema#',
-            title: {},
-            description: {},
-            }}", self.title, self.get_description())
+        write!(f, "{{\"$schema\": \"http://json-schema.org/draft-07/schema#\",
+            \"title\": \"{}\",
+            \"description\": \"{}\",
+            \"type\": \"object\",
+            \"properties\": {{
+                \"apiVersion\": {{
+                    \"type\": \"string\",
+                    \"enum\": \"{}\",
+                    \"description\": \"a string that identifies the version of the schema the object should have. For CRDs this is the crdGroup/version\"
+                }},
+                \"kind\": {{
+                        \"type\": \"string\",
+                        \"const\": \"{}\",
+                        \"description\": \"a string the identifies the kind of resource that this document represents\"
+                    }},
+                \"metadata\": {{
+                    \"type\": \"object\",
+                    \"properties\": {{
+                        \"name\": {{
+                            \"type\": \"string\",
+                            \"description\": \"a string that uniquely identifies this object within the current namespace\"
+                        }},
+                        \"labels\": {{
+                            \"type\": \"object\",
+                            \"description\": \"a map of string keys and values that can be used to organize and categorize objects, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\"
+                        }},
+                        \"annotations\": {{
+                            \"type\": \"object\",
+                            \"description\": \"a map of string keys and values that can be used by external tooling to store and retrieve arbitrary metadata about this object, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/\"
+                        }}
+                    }},
+                \"required\": [\"name\"]
+                }},
+            \"spec\": {{}}
+            }},
+            \"required\": [\"apiVersion\", \"kind\", \"metadata\", \"spec\"],
+            \"allOf\": [ {{ \"if\": {{ \"properties\": {{ \"apiVersion\": {{ \"const\": \"{}\" }}}}}}}}]
+            }}", self.title, self.get_description(), self.schema_version, self.kind, self.schema_version)
     }
 }
