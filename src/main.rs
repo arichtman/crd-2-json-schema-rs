@@ -36,5 +36,5 @@ fn main() {
     // Which should make our call site nice and keep the transformation logic alongside the data model
     // Or maybe I'm talking out my ass, who knows, I'm learning
     let output = CRDJsonSchema::from(crd);
-    println!("{}", output);
+    println!("{}", serde_json::to_string(&output).unwrap());
 }

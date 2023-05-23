@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -94,82 +95,89 @@ impl Crd {
     }
 }
 
-#[derive(Debug)]
-pub struct CRDJsonSchema {
-    title: String,
-    schema_version: String,
-    kind: String,
-    schema: HashMap<String, OpenAPI>,
-}
+#[derive(Serialize, Deserialize)]
+pub struct CRDJsonSchema(serde_json::Value);
+// everything: serde_json::Value, // everything: HashMap<String, serde_json::Value>, // serde_json::Value
+// const schema: String = "http://json-schema.org/draft-07/schema#",
+// title: String,
+// schema_version: String,
+// kind: String,
+// schema: HashMap<String, OpenAPI>,
+// }
 
-impl CRDJsonSchema {
-    fn get_description(&self) -> String {
-        //TODO: We're not actually storing the group granularly?
-        format!(
-            "Generated JSON schema for {}'s {} CRD",
-            self.schema_version, self.schema_version
-        )
-    }
-}
+// impl CRDJsonSchema {
+//     fn get_description(&self) -> String {
+//         //TODO: We're not actually storing the group granularly?
+//         format!(
+//             "Generated JSON schema for {}'s {} CRD",
+//             self.schema_version, self.schema_version
+//         )
+//     }
+// }
 
 impl From<Crd> for CRDJsonSchema {
-    fn from(crd: Crd) -> Self {
-        let spec = crd
-            .get_current_version()
-            .expect("CRD versions must contain at least one marked for storage");
-        CRDJsonSchema {
-            //TODO: See about ownership and references here
-            title: crd
-                .get_name()
-                .expect("CRD name must be present")
-                .to_string(),
-            schema_version: format!("{}/{}", crd.get_spec_group(), spec.name),
-            kind: crd.get_spec_names_kind(),
-            schema: spec.schema,
-        }
+    fn from(crd: Crd) -> CRDJsonSchema {
+        // let spec = crd
+        // .get_current_version()
+        // .expect("CRD versions must contain at least one marked for storage");
+        let version = crd.get_current_version().unwrap();
+        CRDJsonSchema(json!({"schema": "http://json-schema.org/draft-07/schema#",
+            "title": crd.get_name(),
+            // TODO: work out version display normally
+            "description": format!("Generated JSON schema for {:?}'s {:?} CRD", version, version)}))
+        // CRDJsonSchema {
+        //     //TODO: See about ownership and references here
+        //     title: crd
+        //         .get_name()
+        //         .expect("CRD name must be present")
+        //         .to_string(),
+        //     schema_version: format!("{}/{}", crd.get_spec_group(), spec.name),
+        //     kind: crd.get_spec_names_kind(),
+        //     schema: spec.schema,
+        // }
     }
 }
 
-impl fmt::Display for CRDJsonSchema {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        //TODO: Printing logic
-        write!(f, "{{\"$schema\": \"http://json-schema.org/draft-07/schema#\",
-            \"title\": \"{}\",
-            \"description\": \"{}\",
-            \"type\": \"object\",
-            \"properties\": {{
-                \"apiVersion\": {{
-                    \"type\": \"string\",
-                    \"enum\": \"{}\",
-                    \"description\": \"a string that identifies the version of the schema the object should have. For CRDs this is the crdGroup/version\"
-                }},
-                \"kind\": {{
-                        \"type\": \"string\",
-                        \"const\": \"{}\",
-                        \"description\": \"a string the identifies the kind of resource that this document represents\"
-                    }},
-                \"metadata\": {{
-                    \"type\": \"object\",
-                    \"properties\": {{
-                        \"name\": {{
-                            \"type\": \"string\",
-                            \"description\": \"a string that uniquely identifies this object within the current namespace\"
-                        }},
-                        \"labels\": {{
-                            \"type\": \"object\",
-                            \"description\": \"a map of string keys and values that can be used to organize and categorize objects, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\"
-                        }},
-                        \"annotations\": {{
-                            \"type\": \"object\",
-                            \"description\": \"a map of string keys and values that can be used by external tooling to store and retrieve arbitrary metadata about this object, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/\"
-                        }}
-                    }},
-                \"required\": [\"name\"]
-                }},
-            \"spec\": {{}}
-            }},
-            \"required\": [\"apiVersion\", \"kind\", \"metadata\", \"spec\"],
-            \"allOf\": [ {{ \"if\": {{ \"properties\": {{ \"apiVersion\": {{ \"const\": \"{}\" }}}}}}}}]
-            }}", self.title, self.get_description(), self.schema_version, self.kind, self.schema_version)
-    }
-}
+// impl fmt::Display for CRDJsonSchema {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         //TODO: Printing logic
+//         write!(f, "{{\"$schema\": \"http://json-schema.org/draft-07/schema#\",
+//             \"title\": \"{}\",
+//             \"description\": \"{}\",
+//             \"type\": \"object\",
+//             \"properties\": {{
+//                 \"apiVersion\": {{
+//                     \"type\": \"string\",
+//                     \"enum\": \"{}\",
+//                     \"description\": \"a string that identifies the version of the schema the object should have. For CRDs this is the crdGroup/version\"
+//                 }},
+//                 \"kind\": {{
+//                         \"type\": \"string\",
+//                         \"const\": \"{}\",
+//                         \"description\": \"a string the identifies the kind of resource that this document represents\"
+//                     }},
+//                 \"metadata\": {{
+//                     \"type\": \"object\",
+//                     \"properties\": {{
+//                         \"name\": {{
+//                             \"type\": \"string\",
+//                             \"description\": \"a string that uniquely identifies this object within the current namespace\"
+//                         }},
+//                         \"labels\": {{
+//                             \"type\": \"object\",
+//                             \"description\": \"a map of string keys and values that can be used to organize and categorize objects, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/\"
+//                         }},
+//                         \"annotations\": {{
+//                             \"type\": \"object\",
+//                             \"description\": \"a map of string keys and values that can be used by external tooling to store and retrieve arbitrary metadata about this object, for more details see https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/\"
+//                         }}
+//                     }},
+//                 \"required\": [\"name\"]
+//                 }},
+//             \"spec\": {{}}
+//             }},
+//             \"required\": [\"apiVersion\", \"kind\", \"metadata\", \"spec\"],
+//             \"allOf\": [ {{ \"if\": {{ \"properties\": {{ \"apiVersion\": {{ \"const\": \"{}\" }}}}}}}}]
+//             }}", self.title, self.get_description(), self.schema_version, self.kind, self.schema_version)
+//     }
+// }
