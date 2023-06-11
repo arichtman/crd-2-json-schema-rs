@@ -44,6 +44,8 @@
           cargo-edit
           cargo-watch
           rust-analyzer
+          gdb
+          lldb
         ];
 
         shellHook = ''
