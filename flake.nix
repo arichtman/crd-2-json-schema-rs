@@ -2,7 +2,7 @@
   description = "A Nix-flake-based Rust development environment";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-22.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-24.05";
     flake-utils.url = "github:numtide/flake-utils";
     rust-overlay.url = "github:oxalica/rust-overlay";
   };
@@ -44,8 +44,8 @@
           cargo-edit
           cargo-watch
           rust-analyzer
-          gdb
           lldb
+          darwin.apple_sdk.frameworks.Security
         ];
 
         shellHook = ''
